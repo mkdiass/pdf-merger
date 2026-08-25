@@ -3,20 +3,46 @@ const uploadArea = document.getElementById("uploadArea");
 const fileList = document.getElementById("fileList");
 const mergeButton = document.getElementById("mergeButton");
 const clearButton = document.getElementById("clearButton");
+const fileSummary = document.getElementById("fileSummary");
+
+const fileSettings = document.getElementById("fileSettings");
+const fileNameInput = document.getElementById("fileName");
+
+const resultArea = document.getElementById("resultArea");
+const resultInfo = document.getElementById("resultInfo");
+
+const downloadButton = document.getElementById("downloadButton");
+const newMergeButton = document.getElementById("newMergeButton");
+
 
 let files = [];
 
-// Selecionar arquivos
+let draggedIndex = null;
+
+let finalPDFBlob = null;
+
+let finalPDFUrl = null;
+
+
+// ======================================================
+// SELECIONAR ARQUIVOS
+// ======================================================
+
 fileInput.addEventListener("change", (event) => {
-    const selectedFiles = Array.from(event.target.files);
+
+    const selectedFiles =
+        Array.from(event.target.files);
 
     addFiles(selectedFiles);
 
-    // Permite selecionar os mesmos arquivos novamente
     fileInput.value = "";
 });
 
-// Adicionar PDFs
+
+// ======================================================
+// ADICIONAR ARQUIVOS
+// ======================================================
+
 function addFiles(newFiles) {
 
     const pdfFiles = newFiles.filter(file =>
@@ -29,8 +55,12 @@ function addFiles(newFiles) {
     renderFiles();
 }
 
-// Mostrar arquivos na tela
-function renderFiles() {
+
+// ======================================================
+// RENDERIZAR LISTA
+// ======================================================
+
+async function renderFiles() {
 
     fileList.innerHTML = "";
 
@@ -44,16 +74,40 @@ function renderFiles() {
 
         mergeButton.disabled = true;
 
+        fileSettings.classList.add("hidden");
+
+        updateSummary();
+
         return;
     }
 
+
+    mergeButton.disabled = false;
+
+    fileSettings.classList.remove("hidden");
+
+
     files.forEach((file, index) => {
 
-        const fileElement = document.createElement("div");
+        const fileElement =
+            document.createElement("div");
 
         fileElement.classList.add("file");
 
+        fileElement.draggable = true;
+
+        fileElement.dataset.index = index;
+
+
         fileElement.innerHTML = `
+
+            <div
+                class="drag-handle"
+                title="Arraste para reorganizar"
+            >
+                ⋮⋮
+            </div>
+
             <div class="file-icon">
                 📄
             </div>
@@ -64,8 +118,11 @@ function renderFiles() {
                     ${escapeHTML(file.name)}
                 </div>
 
-                <div class="file-size">
-                    ${formatFileSize(file.size)}
+                <div
+                    class="file-details"
+                    id="details-${index}"
+                >
+                    Carregando informações...
                 </div>
 
             </div>
@@ -79,64 +136,415 @@ function renderFiles() {
             </button>
         `;
 
+
         fileList.appendChild(fileElement);
+
+        loadPDFInfo(file, index);
     });
 
-    mergeButton.disabled = false;
+
+    updateSummary();
 }
 
-// Remover arquivo
-fileList.addEventListener("click", (event) => {
 
-    const button = event.target.closest(".remove-button");
+// ======================================================
+// INFORMAÇÕES DO PDF
+// ======================================================
 
-    if (!button) {
+async function loadPDFInfo(file, index) {
+
+    try {
+
+        const arrayBuffer =
+            await file.arrayBuffer();
+
+        const pdf =
+            await PDFLib.PDFDocument.load(
+                arrayBuffer
+            );
+
+        const pageCount =
+            pdf.getPageCount();
+
+
+        const details =
+            document.getElementById(
+                `details-${index}`
+            );
+
+
+        if (details) {
+
+            details.textContent =
+                `${pageCount} ${
+                    pageCount === 1
+                        ? "página"
+                        : "páginas"
+                } • ${formatFileSize(file.size)}`;
+        }
+
+
+        updateSummary();
+
+    } catch (error) {
+
+        const details =
+            document.getElementById(
+                `details-${index}`
+            );
+
+
+        if (details) {
+
+            details.textContent =
+                "Não foi possível ler este PDF";
+        }
+    }
+}
+
+
+// ======================================================
+// RESUMO
+// ======================================================
+
+async function updateSummary() {
+
+    if (files.length === 0) {
+
+        fileSummary.textContent =
+            "0 arquivos • 0 páginas • 0 MB";
+
         return;
     }
 
-    const index = Number(button.dataset.index);
 
-    files.splice(index, 1);
+    let totalPages = 0;
 
-    renderFiles();
-});
 
-// Limpar todos
-clearButton.addEventListener("click", () => {
+    for (const file of files) {
 
-    files = [];
+        try {
 
-    fileInput.value = "";
+            const arrayBuffer =
+                await file.arrayBuffer();
 
-    renderFiles();
-});
+            const pdf =
+                await PDFLib.PDFDocument.load(
+                    arrayBuffer
+                );
 
-// Drag and Drop
-uploadArea.addEventListener("dragover", (event) => {
+            totalPages +=
+                pdf.getPageCount();
 
-    event.preventDefault();
+        } catch (error) {
 
-    uploadArea.classList.add("dragover");
-});
+            console.error(
+                "Erro ao ler PDF:",
+                file.name
+            );
+        }
+    }
 
-uploadArea.addEventListener("dragleave", () => {
 
-    uploadArea.classList.remove("dragover");
-});
+    const totalSize =
+        files.reduce(
+            (total, file) =>
+                total + file.size,
+            0
+        );
 
-uploadArea.addEventListener("drop", (event) => {
 
-    event.preventDefault();
+    const fileText =
+        files.length === 1
+            ? "arquivo"
+            : "arquivos";
 
-    uploadArea.classList.remove("dragover");
 
-    const droppedFiles = Array.from(event.dataTransfer.files);
+    const pageText =
+        totalPages === 1
+            ? "página"
+            : "páginas";
 
-    addFiles(droppedFiles);
-});
 
+    fileSummary.textContent =
+        `${files.length} ${fileText} • ${totalPages} ${pageText} • ${formatFileSize(totalSize)}`;
+}
+
+
+// ======================================================
+// REMOVER ARQUIVO
+// ======================================================
+
+fileList.addEventListener(
+    "click",
+    (event) => {
+
+        const button =
+            event.target.closest(
+                ".remove-button"
+            );
+
+
+        if (!button) {
+            return;
+        }
+
+
+        const index =
+            Number(button.dataset.index);
+
+
+        files.splice(index, 1);
+
+
+        renderFiles();
+    }
+);
+
+
+// ======================================================
+// LIMPAR TUDO
+// ======================================================
+
+clearButton.addEventListener(
+    "click",
+    () => {
+
+        files = [];
+
+        fileInput.value = "";
+
+        clearResult();
+
+        renderFiles();
+    }
+);
+
+
+// ======================================================
+// DRAG AND DROP — UPLOAD
+// ======================================================
+
+uploadArea.addEventListener(
+    "dragover",
+    (event) => {
+
+        event.preventDefault();
+
+        uploadArea.classList.add(
+            "dragover"
+        );
+    }
+);
+
+
+uploadArea.addEventListener(
+    "dragleave",
+    () => {
+
+        uploadArea.classList.remove(
+            "dragover"
+        );
+    }
+);
+
+
+uploadArea.addEventListener(
+    "drop",
+    (event) => {
+
+        event.preventDefault();
+
+        uploadArea.classList.remove(
+            "dragover"
+        );
+
+
+        const droppedFiles =
+            Array.from(
+                event.dataTransfer.files
+            );
+
+
+        addFiles(droppedFiles);
+    }
+);
+
+
+// ======================================================
+// REORDENAR PDFs
+// ======================================================
+
+fileList.addEventListener(
+    "dragstart",
+    (event) => {
+
+        const fileElement =
+            event.target.closest(".file");
+
+
+        if (!fileElement) {
+            return;
+        }
+
+
+        draggedIndex =
+            Number(
+                fileElement.dataset.index
+            );
+
+
+        fileElement.classList.add(
+            "dragging"
+        );
+    }
+);
+
+
+fileList.addEventListener(
+    "dragend",
+    (event) => {
+
+        const fileElement =
+            event.target.closest(".file");
+
+
+        if (!fileElement) {
+            return;
+        }
+
+
+        fileElement.classList.remove(
+            "dragging"
+        );
+
+
+        draggedIndex = null;
+
+
+        document
+            .querySelectorAll(".file")
+            .forEach(element => {
+
+                element.classList.remove(
+                    "drag-over"
+                );
+            });
+    }
+);
+
+
+fileList.addEventListener(
+    "dragover",
+    (event) => {
+
+        event.preventDefault();
+
+
+        const target =
+            event.target.closest(".file");
+
+
+        if (!target) {
+            return;
+        }
+
+
+        const targetIndex =
+            Number(
+                target.dataset.index
+            );
+
+
+        if (
+            targetIndex ===
+            draggedIndex
+        ) {
+            return;
+        }
+
+
+        document
+            .querySelectorAll(".file")
+            .forEach(element => {
+
+                element.classList.remove(
+                    "drag-over"
+                );
+            });
+
+
+        target.classList.add(
+            "drag-over"
+        );
+    }
+);
+
+
+fileList.addEventListener(
+    "drop",
+    (event) => {
+
+        event.preventDefault();
+
+
+        const target =
+            event.target.closest(".file");
+
+
+        if (!target) {
+            return;
+        }
+
+
+        const targetIndex =
+            Number(
+                target.dataset.index
+            );
+
+
+        if (
+            draggedIndex === null ||
+            targetIndex === draggedIndex
+        ) {
+            return;
+        }
+
+
+        const draggedFile =
+            files[draggedIndex];
+
+
+        files.splice(
+            draggedIndex,
+            1
+        );
+
+
+        files.splice(
+            targetIndex,
+            0,
+            draggedFile
+        );
+
+
+        draggedIndex = null;
+
+
+        renderFiles();
+    }
+);
+
+
+// ======================================================
 // MESCLAR PDFs
-mergeButton.addEventListener("click", mergePDFs);
+// ======================================================
+
+mergeButton.addEventListener(
+    "click",
+    mergePDFs
+);
+
 
 async function mergePDFs() {
 
@@ -144,111 +552,341 @@ async function mergePDFs() {
         return;
     }
 
-    // Desabilita o botão durante o processamento
+
     mergeButton.disabled = true;
 
-    const originalText = mergeButton.textContent;
 
-    mergeButton.textContent = "Mesclando...";
+    const originalText =
+        mergeButton.textContent;
+
+
+    mergeButton.textContent =
+        "Mesclando...";
+
+
+    clearResult();
+
 
     try {
 
-        // Cria um novo PDF vazio
-        const mergedPdf = await PDFLib.PDFDocument.create();
+        const mergedPdf =
+            await PDFLib.PDFDocument.create();
 
-        // Percorre todos os PDFs selecionados
+
+        let totalPages = 0;
+
+
+        // ----------------------------------------------
+        // COPIAR TODAS AS PÁGINAS
+        // ----------------------------------------------
+
         for (const file of files) {
 
-            // Lê o arquivo
-            const arrayBuffer = await file.arrayBuffer();
+            const arrayBuffer =
+                await file.arrayBuffer();
 
-            // Carrega o PDF
-            const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
 
-            // Pega todas as páginas
-            const pages = await mergedPdf.copyPages(
-                pdf,
-                pdf.getPageIndices()
-            );
+            const pdf =
+                await PDFLib.PDFDocument.load(
+                    arrayBuffer
+                );
 
-            // Adiciona cada página ao novo PDF
-            pages.forEach((page) => {
+
+            const pageIndices =
+                pdf.getPageIndices();
+
+
+            const pages =
+                await mergedPdf.copyPages(
+                    pdf,
+                    pageIndices
+                );
+
+
+            pages.forEach(page => {
+
                 mergedPdf.addPage(page);
+
             });
+
+
+            totalPages +=
+                pageIndices.length;
         }
 
-        // Gera o PDF final
-        const mergedPdfBytes = await mergedPdf.save();
 
-        // Cria um arquivo temporário no navegador
-        const blob = new Blob(
-            [mergedPdfBytes],
-            { type: "application/pdf" }
+        // ----------------------------------------------
+        // GERAR PDF
+        // ----------------------------------------------
+
+        const mergedPdfBytes =
+            await mergedPdf.save();
+
+
+        finalPDFBlob =
+            new Blob(
+                [mergedPdfBytes],
+                {
+                    type: "application/pdf"
+                }
+            );
+
+
+        // ----------------------------------------------
+        // NOME DO ARQUIVO
+        // ----------------------------------------------
+
+        let fileName =
+            fileNameInput.value.trim();
+
+
+        if (!fileName) {
+
+            fileName =
+                "PDF_Mesclado";
+        }
+
+
+        fileName =
+            sanitizeFileName(fileName);
+
+
+        // Guardamos o nome para o download
+
+        downloadButton.dataset.filename =
+            `${fileName}.pdf`;
+
+
+        // ----------------------------------------------
+        // URL TEMPORÁRIA
+        // ----------------------------------------------
+
+        if (finalPDFUrl) {
+
+            URL.revokeObjectURL(
+                finalPDFUrl
+            );
+        }
+
+
+        finalPDFUrl =
+            URL.createObjectURL(
+                finalPDFBlob
+            );
+
+
+        // ----------------------------------------------
+        // RESULTADO
+        // ----------------------------------------------
+
+        resultInfo.textContent =
+            `${totalPages} ${
+                totalPages === 1
+                    ? "página"
+                    : "páginas"
+            } • ${formatFileSize(
+                finalPDFBlob.size
+            )}`;
+
+
+        resultArea.classList.remove(
+            "hidden"
         );
 
-        const url = URL.createObjectURL(blob);
 
-        // Cria link de download
-        const downloadLink = document.createElement("a");
+        resultArea.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
 
-        downloadLink.href = url;
-        downloadLink.download = "PDF_Mesclado.pdf";
 
-        document.body.appendChild(downloadLink);
+        mergeButton.textContent =
+            "PDF criado!";
 
-        downloadLink.click();
-
-        document.body.removeChild(downloadLink);
-
-        // Libera memória
-        URL.revokeObjectURL(url);
-
-        mergeButton.textContent = "PDF criado com sucesso!";
-
-        setTimeout(() => {
-
-            mergeButton.textContent = originalText;
-
-        }, 2500);
 
     } catch (error) {
 
         console.error(error);
+
 
         alert(
             "Não foi possível mesclar os PDFs. " +
             "Verifique se os arquivos não estão protegidos por senha ou corrompidos."
         );
 
-        mergeButton.textContent = originalText;
+
+        mergeButton.textContent =
+            originalText;
+
 
     } finally {
 
         mergeButton.disabled = false;
-
     }
 }
 
-// Formatar tamanho do arquivo
+
+// ======================================================
+// BAIXAR PDF
+// ======================================================
+
+downloadButton.addEventListener(
+    "click",
+    () => {
+
+        if (
+            !finalPDFBlob ||
+            !finalPDFUrl
+        ) {
+            return;
+        }
+
+
+        const downloadLink =
+            document.createElement("a");
+
+
+        downloadLink.href =
+            finalPDFUrl;
+
+
+        downloadLink.download =
+            downloadButton.dataset.filename ||
+            "PDF_Mesclado.pdf";
+
+
+        document.body.appendChild(
+            downloadLink
+        );
+
+
+        downloadLink.click();
+
+
+        document.body.removeChild(
+            downloadLink
+        );
+    }
+);
+
+
+// ======================================================
+// NOVA MESCLAGEM
+// ======================================================
+
+newMergeButton.addEventListener(
+    "click",
+    () => {
+
+        files = [];
+
+        fileInput.value = "";
+
+        fileNameInput.value =
+            "PDF_Mesclado";
+
+
+        clearResult();
+
+        renderFiles();
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+);
+
+
+// ======================================================
+// LIMPAR RESULTADO
+// ======================================================
+
+function clearResult() {
+
+    resultArea.classList.add(
+        "hidden"
+    );
+
+
+    if (finalPDFUrl) {
+
+        URL.revokeObjectURL(
+            finalPDFUrl
+        );
+
+        finalPDFUrl = null;
+    }
+
+
+    finalPDFBlob = null;
+
+
+    mergeButton.textContent =
+        "Mesclar PDFs";
+}
+
+
+// ======================================================
+// LIMPAR NOME DO ARQUIVO
+// ======================================================
+
+function sanitizeFileName(name) {
+
+    return name
+        .replace(
+            /[<>:"/\\|?*\x00-\x1F]/g,
+            ""
+        )
+        .trim()
+        .replace(
+            /\.pdf$/i,
+            ""
+        ) || "PDF_Mesclado";
+}
+
+
+// ======================================================
+// FORMATAR TAMANHO
+// ======================================================
+
 function formatFileSize(bytes) {
 
     if (bytes < 1024) {
+
         return `${bytes} B`;
     }
 
+
     if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
+
+        return `${(
+            bytes / 1024
+        ).toFixed(1)} KB`;
     }
 
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+    return `${(
+        bytes / (1024 * 1024)
+    ).toFixed(1)} MB`;
 }
 
-// Evitar inserir HTML através do nome do arquivo
+
+// ======================================================
+// SEGURANÇA
+// ======================================================
+
 function escapeHTML(text) {
 
-    const div = document.createElement("div");
+    const div =
+        document.createElement(
+            "div"
+        );
+
 
     div.textContent = text;
+
 
     return div.innerHTML;
 }

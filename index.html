@@ -8,7 +8,6 @@
     <title>PDF Merger</title>
 
     <link rel="stylesheet" href="css/styles.css">
-
 </head>
 
 <body>
@@ -19,6 +18,9 @@
             <h1>Mesclar PDFs</h1>
             <p>Junte vários arquivos PDF em um único documento.</p>
         </header>
+
+
+        <!-- ÁREA DE UPLOAD -->
 
         <section class="upload-area" id="uploadArea">
 
@@ -47,31 +49,130 @@
 
         </section>
 
+
+        <!-- LISTA DE ARQUIVOS -->
+
         <section class="files-section">
 
             <div class="files-header">
-                <h2>Arquivos selecionados</h2>
+
+                <div>
+
+                    <h2>Arquivos selecionados</h2>
+
+                    <p
+                        id="fileSummary"
+                        class="file-summary"
+                    >
+                        0 arquivos • 0 páginas • 0 MB
+                    </p>
+
+                </div>
 
                 <button id="clearButton">
                     Limpar
                 </button>
+
             </div>
 
-            <div id="fileList" class="file-list">
+
+            <div
+                id="fileList"
+                class="file-list"
+            >
+
                 <p class="empty">
                     Nenhum PDF selecionado.
                 </p>
+
             </div>
 
         </section>
 
-        <button id="mergeButton" class="merge-button" disabled>
+
+        <!-- CONFIGURAÇÃO DO ARQUIVO -->
+
+        <section
+            id="fileSettings"
+            class="file-settings hidden"
+        >
+
+            <label for="fileName">
+                Nome do arquivo final
+            </label>
+
+            <div class="file-name-input">
+
+                <input
+                    type="text"
+                    id="fileName"
+                    value="PDF_Mesclado"
+                    maxlength="100"
+                    autocomplete="off"
+                >
+
+                <span>.pdf</span>
+
+            </div>
+
+        </section>
+
+
+        <!-- BOTÃO MESCLAR -->
+
+        <button
+            id="mergeButton"
+            class="merge-button"
+            disabled
+        >
             Mesclar PDFs
         </button>
-        <h3>Feito por David</h3>
+
+
+        <!-- RESULTADO -->
+
+        <section
+            id="resultArea"
+            class="result-area hidden"
+        >
+
+            <div class="success-icon">
+                ✓
+            </div>
+
+            <h2>
+                PDF criado com sucesso!
+            </h2>
+
+            <p id="resultInfo">
+                Seu documento está pronto.
+            </p>
+
+            <div class="result-actions">
+
+                <button
+                    id="downloadButton"
+                    class="download-button"
+                >
+                    ↓ Baixar PDF
+                </button>
+
+                <button
+                    id="newMergeButton"
+                    class="new-merge-button"
+                >
+                    ↻ Mesclar novamente
+                </button>
+
+            </div>
+
+        </section>
+
     </main>
 
+
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
     <script src="script.js"></script>
 
 </body>
