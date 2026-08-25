@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    color: #111;
+    min-height: 100vh;
+}
+
+.container {
+    width: min(900px, 90%);
+    margin: 60px auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+header h1 {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+header p {
+    color: #666;
+    font-size: 17px;
+}
+
+/* ÁREA DE UPLOAD */
+
+.upload-area {
+    background: white;
+    border: 2px dashed #ccc;
+    border-radius: 16px;
+    padding: 60px 20px;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.upload-area.dragover {
+    border-color: #2563eb;
+    background: #f8faff;
+}
+
+.upload-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 32px;
+
+    margin: 0 auto 20px;
+}
+
+.upload-area h2 {
+    margin-bottom: 10px;
+}
+
+.upload-area p {
+    color: #777;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+#fileInput {
+    display: none;
+}
+
+/* BOTÃO SELECIONAR */
+
+.button {
+    display: inline-block;
+
+    background: #2563eb;
+    color: white;
+
+    padding: 13px 24px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-weight: bold;
+
+    transition: 0.2s;
+}
+
+.button:hover {
+    background: #1d4ed8;
+}
+
+/* LISTA */
+
+.files-section {
+    margin-top: 35px;
+}
+
+.files-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 15px;
+}
+
+.files-header h2 {
+    font-size: 20px;
+}
+
+/* BOTÃO LIMPAR */
+
+#clearButton {
+    border: none;
+
+    background: #ef4444;
+    color: white;
+
+    padding: 9px 16px;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    font-weight: bold;
+
+    transition: 0.2s;
+}
+
+#clearButton:hover {
+    background: #dc2626;
+}
+
+/* ARQUIVOS */
+
+.file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.file {
+    background: white;
+
+    padding: 16px;
+
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    cursor: grab;
+}
+
+.file-icon {
+    font-size: 25px;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-name {
+    font-weight: bold;
+}
+
+.file-size {
+    color: #888;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.remove-button {
+    border: none;
+
+    background: #fee2e2;
+    color: #dc2626;
+
+    width: 35px;
+    height: 35px;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+    transition: 0.2s;
+}
+
+.remove-button:hover {
+    background: #dc2626;
+    color: white;
+}
+
+.empty {
+    background: white;
+
+    padding: 30px;
+
+    text-align: center;
+
+    border-radius: 10px;
+
+    color: #999;
+}
+
+/* BOTÃO MESCLAR */
+
+.merge-button {
+    width: 100%;
+
+    margin-top: 30px;
+
+    padding: 17px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #16a34a;
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.merge-button:hover {
+    background: #15803d;
+}
+
+.merge-button:disabled {
+    background: #d1d5db;
+    color: #6b7280;
+
+    cursor: not-allowed;
+}
