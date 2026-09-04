@@ -28,9 +28,7 @@ function secureRandom(max) {
     const maxUint = 0x100000000;
     const limit = maxUint - (maxUint % max);
     const array = new Uint32Array(1);
-    do {
-        crypto.getRandomValues(array);
-    } while (array[0] >= limit);
+    do { crypto.getRandomValues(array); } while (array[0] >= limit);
     return array[0] % max;
 }
 
@@ -38,7 +36,7 @@ function cleanReference(value) {
     return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '');
 }
 
-function shuffled(array) {
+function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = secureRandom(i + 1);
         [array[i], array[j]] = [array[j], array[i]];
@@ -54,26 +52,26 @@ function getReferences() {
     return [cleanReference(reference.value), cleanReference(referenceExtra.value)].filter(Boolean);
 }
 
-function buildReferenceParts(refs, targetLength, mode) {
-    if (!refs.length || mode === 'random' || mode === 'maximum') return [];
-
-    const source = refs.join('');
-    const parts = [];
-    const transformed = source.split('').map((char, index) => {
-        if (/[a-z]/.test(char)) return index % 2 === 0 ? char.toUpperCase() : char;
+function transformReference(source) {
+    return source.split('').map((char, index) => {
+        if (/[a-z]/.test(char) && index % 2 === 0) return char.toUpperCase();
         return char;
-    });
+    }).join('');
+}
 
-    if (mode === 'memorable') {
-        parts.push(...transformed.slice(0, Math.min(transformed.length, Math.max(4, Math.floor(targetLength * 0.4)))));
-    } else {
-        const amount = Math.min(transformed.length, Math.max(2, Math.floor(targetLength * 0.25)));
-        const positions = Array.from({ length: transformed.length }, (_, i) => i);
-        shuffled(positions);
-        positions.slice(0, amount).forEach(index => parts.push(transformed[index]));
-    }
+function buildReferencePart(refs, targetLength, mode) {
+    if (!refs.length || mode === 'random' || mode === 'maximum') return '';
 
-    return parts;
+    const source = transformReference(refs.join(''));
+    const amount = mode === 'memorable'
+        ? Math.min(source.length, Math.max(5, Math.floor(targetLength * 0.45)))
+        : Math.min(source.length, Math.max(3, Math.floor(targetLength * 0.30)));
+
+    if (!amount) return '';
+
+    // Mantemos o trecho da referência junto na senha para que a personalização seja perceptível.
+    const start = source.length > amount ? secureRandom(source.length - amount + 1) : 0;
+    return source.slice(start, start + amount);
 }
 
 function getActiveSets() {
@@ -96,29 +94,40 @@ function generate() {
     const refs = getReferences();
     const targetLength = mode === 'maximum' ? Math.max(24, Number(length.value)) : Number(length.value);
     const all = active.join('');
-    const chars = [];
+    const randomChars = [];
 
-    active.forEach(set => chars.push(set[secureRandom(set.length)]));
+    // Garante os tipos de caracteres escolhidos.
+    active.forEach(set => randomChars.push(set[secureRandom(set.length)]));
 
-    const referenceParts = buildReferenceParts(refs, targetLength, mode);
-    referenceParts.forEach(char => {
-        if (chars.length < targetLength) chars.push(char);
-    });
+    const referencePart = buildReferencePart(refs, targetLength, mode);
+    const remaining = Math.max(0, targetLength - randomChars.length - referencePart.length);
 
-    while (chars.length < targetLength) chars.push(all[secureRandom(all.length)]);
+    while (randomChars.length < active.length + remaining) {
+        randomChars.push(all[secureRandom(all.length)]);
+    }
 
-    shuffled(chars);
-    password.value = chars.join('');
+    // A referência fica em um bloco contínuo; o restante permanece aleatório.
+    const randomSection = shuffle(randomChars);
+    let result = randomSection.join('');
+
+    if (referencePart) {
+        const insertAt = secureRandom(result.length + 1);
+        result = result.slice(0, insertAt) + referencePart + result.slice(insertAt);
+    }
+
+    password.value = result.slice(0, targetLength);
     message.textContent = '';
-    updateMeta(mode, refs);
+    updateMeta(mode, refs, Boolean(referencePart));
     updateStrength(active.length, mode, targetLength, Boolean(refs.length));
 }
 
-function updateMeta(mode, refs) {
+function updateMeta(mode, refs, referenceUsed) {
     lengthMeta.textContent = `${password.value.length} caracteres`;
-    referenceMeta.textContent = refs.length && mode !== 'random' && mode !== 'maximum'
-        ? 'Referência personalizada'
-        : 'Sem referência na senha';
+    referenceMeta.textContent = referenceUsed
+        ? 'Referência incorporada'
+        : refs.length && (mode === 'random' || mode === 'maximum')
+            ? 'Referência ignorada neste modo'
+            : 'Sem referência';
     randomnessMeta.textContent = mode === 'maximum' ? 'Máxima aleatoriedade' : 'Aleatoriedade criptográfica';
 }
 
@@ -135,10 +144,8 @@ function updateStrength(types, mode, size, hasReference) {
 
 function updateModeUI() {
     document.querySelectorAll('.mode-option').forEach(option => {
-        const input = option.querySelector('input');
-        option.classList.toggle('selected', input.checked);
+        option.classList.toggle('selected', option.querySelector('input').checked);
     });
-
     if (getMode() === 'maximum') length.value = Math.max(24, Number(length.value));
     lengthValue.textContent = length.value;
     generate();
@@ -153,7 +160,6 @@ length.addEventListener('input', () => {
 [uppercase, lowercase, numbers, symbols].forEach(el => el.addEventListener('change', generate));
 [reference, referenceExtra].forEach(el => el.addEventListener('input', generate));
 document.querySelectorAll('input[name="mode"]').forEach(el => el.addEventListener('change', updateModeUI));
-
 generateButton.addEventListener('click', generate);
 
 copyButton.addEventListener('click', async () => {
