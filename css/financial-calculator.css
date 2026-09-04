@@ -1,0 +1,11 @@
+.rate-type-field { margin-top: 18px; }
+.financial-result { margin-top: 25px; }
+.financial-highlight { background: #111827; color: #fff; border-radius: 14px; padding: 28px; text-align: center; }
+.financial-highlight span { color: #cbd5e1; display: block; margin-bottom: 8px; }
+.financial-highlight strong { font-size: clamp(32px, 7vw, 48px); }
+.financial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.financial-grid div { border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; background: #fff; }
+.financial-grid span { display: block; color: #64748b; font-size: 13px; margin-bottom: 6px; }
+.financial-grid strong { font-size: 18px; }
+.chart-wrap { margin-top: 18px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
+@media (max-width: 650px) { .financial-grid { grid-template-columns: 1fr; } }
