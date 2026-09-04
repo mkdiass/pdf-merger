@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagem → PDF</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/tools.css">
+    <link rel="stylesheet" href="css/pdf-tools.css">
+</head>
+<body>
+<main class="container">
+    <nav class="tool-nav" aria-label="Ferramentas">
+        <a href="index.html" class="tool-link">📄 PDF Merger</a>
+        <a href="date-calculator.html" class="tool-link">📅 Datas</a>
+        <a href="pdf-to-image.html" class="tool-link">🖼️ PDF → Imagem</a>
+        <a href="image-to-pdf.html" class="tool-link active">📑 Imagem → PDF</a>
+        <a href="financial-calculator.html" class="tool-link">💰 Financeira</a>
+        <a href="password-generator.html" class="tool-link">🔐 Senhas</a>
+    </nav>
+
+    <header>
+        <h1>Imagem → PDF</h1>
+        <p class="tool-description">Converta uma ou várias imagens em um único PDF, organize a ordem e baixe o resultado.</p>
+    </header>
+
+    <section class="tool-card">
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">+</div>
+            <h2>Adicionar imagens</h2>
+            <p>Arraste suas imagens aqui<br>ou selecione no computador</p>
+            <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" multiple>
+            <label for="fileInput" class="button">Selecionar imagens</label>
+        </div>
+
+        <div id="fileSection" class="hidden">
+            <div class="files-header image-files-header">
+                <div><h2>Imagens selecionadas</h2><p id="fileSummary" class="file-summary">0 imagens</p></div>
+                <button id="clearButton">Limpar</button>
+            </div>
+            <div id="imageList" class="image-list"></div>
+            <button id="createButton" class="merge-button" disabled>Criar PDF</button>
+        </div>
+
+        <div id="resultArea" class="result-area hidden">
+            <div class="success-icon">✓</div>
+            <h2>PDF criado com sucesso!</h2>
+            <p id="resultInfo"></p>
+            <div class="result-actions">
+                <button id="downloadButton" class="download-button">↓ Baixar PDF</button>
+                <button id="newButton" class="new-merge-button">↻ Nova conversão</button>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="js/image-to-pdf.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+.tool-nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.tool-link {
+    text-decoration: none;
+    color: #475569;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    padding: 9px 13px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: .2s;
+}
+
+.tool-link:hover,
+.tool-link.active {
+    color: #2563eb;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.tool-description {
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.tool-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 28px;
+    margin-top: 25px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.form-field label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.form-field input,
+.form-field select {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    font: inherit;
+    background: #fff;
+    outline: none;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px #dbeafe;
+}
+
+.tool-button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 9px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tool-button:hover { background: #1d4ed8; }
+.tool-button:disabled { background: #d1d5db; color: #6b7280; cursor: not-allowed; }
+
+.tool-result {
+    margin-top: 20px;
+    padding: 22px;
+    border-radius: 12px;
+    background: #f8faff;
+    border: 1px solid #dbeafe;
+}
+
+.tool-result h2 { margin-bottom: 8px; }
+.tool-result p { color: #64748b; line-height: 1.5; }
+.hidden { display: none !important; }
+
+@media (max-width: 650px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .tool-card { padding: 20px; }
+    .tool-link { font-size: 12px; }
+}
