@@ -5,9 +5,16 @@ const uppercase = document.getElementById('uppercase');
 const lowercase = document.getElementById('lowercase');
 const numbers = document.getElementById('numbers');
 const symbols = document.getElementById('symbols');
+const reference = document.getElementById('reference');
+const referenceExtra = document.getElementById('referenceExtra');
 const strength = document.getElementById('strength');
 const strengthBar = document.getElementById('strengthBar');
+const lengthMeta = document.getElementById('lengthMeta');
+const referenceMeta = document.getElementById('referenceMeta');
+const randomnessMeta = document.getElementById('randomnessMeta');
 const message = document.getElementById('message');
+const generateButton = document.getElementById('generateButton');
+const copyButton = document.getElementById('copyButton');
 
 const sets = {
     uppercase: 'ABCDEFGHJKLMNPQRSTUVWXYZ',
@@ -17,44 +24,146 @@ const sets = {
 };
 
 function secureRandom(max) {
+    if (max <= 0) throw new Error('Limite aleatório inválido.');
+    const maxUint = 0x100000000;
+    const limit = maxUint - (maxUint % max);
     const array = new Uint32Array(1);
-    crypto.getRandomValues(array);
+    do {
+        crypto.getRandomValues(array);
+    } while (array[0] >= limit);
     return array[0] % max;
 }
 
-function generate() {
+function cleanReference(value) {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '');
+}
+
+function shuffled(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = secureRandom(i + 1);
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function getMode() {
+    return document.querySelector('input[name="mode"]:checked')?.value || 'personalized';
+}
+
+function getReferences() {
+    return [cleanReference(reference.value), cleanReference(referenceExtra.value)].filter(Boolean);
+}
+
+function buildReferenceParts(refs, targetLength, mode) {
+    if (!refs.length || mode === 'random' || mode === 'maximum') return [];
+
+    const source = refs.join('');
+    const parts = [];
+    const transformed = source.split('').map((char, index) => {
+        if (/[a-z]/.test(char)) return index % 2 === 0 ? char.toUpperCase() : char;
+        return char;
+    });
+
+    if (mode === 'memorable') {
+        parts.push(...transformed.slice(0, Math.min(transformed.length, Math.max(4, Math.floor(targetLength * 0.4)))));
+    } else {
+        const amount = Math.min(transformed.length, Math.max(2, Math.floor(targetLength * 0.25)));
+        const positions = Array.from({ length: transformed.length }, (_, i) => i);
+        shuffled(positions);
+        positions.slice(0, amount).forEach(index => parts.push(transformed[index]));
+    }
+
+    return parts;
+}
+
+function getActiveSets() {
     const active = [];
     if (uppercase.checked) active.push(sets.uppercase);
     if (lowercase.checked) active.push(sets.lowercase);
     if (numbers.checked) active.push(sets.numbers);
     if (symbols.checked) active.push(sets.symbols);
-    if (!active.length) { message.textContent = 'Selecione pelo menos um tipo de caractere.'; return; }
+    return active;
+}
 
-    const all = active.join('');
-    const chars = active.map(set => set[secureRandom(set.length)]);
-    while (chars.length < Number(length.value)) chars.push(all[secureRandom(all.length)]);
-    for (let i = chars.length - 1; i > 0; i--) {
-        const j = secureRandom(i + 1);
-        [chars[i], chars[j]] = [chars[j], chars[i]];
+function generate() {
+    const active = getActiveSets();
+    if (!active.length) {
+        message.textContent = 'Selecione pelo menos um tipo de caractere.';
+        return;
     }
+
+    const mode = getMode();
+    const refs = getReferences();
+    const targetLength = mode === 'maximum' ? Math.max(24, Number(length.value)) : Number(length.value);
+    const all = active.join('');
+    const chars = [];
+
+    active.forEach(set => chars.push(set[secureRandom(set.length)]));
+
+    const referenceParts = buildReferenceParts(refs, targetLength, mode);
+    referenceParts.forEach(char => {
+        if (chars.length < targetLength) chars.push(char);
+    });
+
+    while (chars.length < targetLength) chars.push(all[secureRandom(all.length)]);
+
+    shuffled(chars);
     password.value = chars.join('');
     message.textContent = '';
-    updateStrength(active.length);
+    updateMeta(mode, refs);
+    updateStrength(active.length, mode, targetLength, Boolean(refs.length));
 }
 
-function updateStrength(types) {
-    const score = Number(length.value) + types * 8;
-    const label = score >= 72 ? 'Muito forte' : score >= 52 ? 'Forte' : score >= 34 ? 'Média' : 'Fraca';
+function updateMeta(mode, refs) {
+    lengthMeta.textContent = `${password.value.length} caracteres`;
+    referenceMeta.textContent = refs.length && mode !== 'random' && mode !== 'maximum'
+        ? 'Referência personalizada'
+        : 'Sem referência na senha';
+    randomnessMeta.textContent = mode === 'maximum' ? 'Máxima aleatoriedade' : 'Aleatoriedade criptográfica';
+}
+
+function updateStrength(types, mode, size, hasReference) {
+    let score = size + types * 8;
+    if (mode === 'maximum') score += 16;
+    if (mode === 'random') score += 6;
+    if (hasReference && mode === 'personalized') score -= 4;
+
+    const label = score >= 92 ? 'Muito forte' : score >= 68 ? 'Forte' : score >= 46 ? 'Média' : 'Fraca';
     strength.textContent = label;
-    strengthBar.style.width = `${Math.min(100, (score / 88) * 100)}%`;
+    strengthBar.style.width = `${Math.min(100, (score / 108) * 100)}%`;
 }
 
-length.addEventListener('input', () => { lengthValue.textContent = length.value; generate(); });
-[uppercase, lowercase, numbers, symbols].forEach(el => el.addEventListener('change', generate));
-document.getElementById('generateButton').addEventListener('click', generate);
-document.getElementById('copyButton').addEventListener('click', async () => {
-    if (!password.value) generate();
-    await navigator.clipboard.writeText(password.value);
-    message.textContent = 'Senha copiada para a área de transferência.';
+function updateModeUI() {
+    document.querySelectorAll('.mode-option').forEach(option => {
+        const input = option.querySelector('input');
+        option.classList.toggle('selected', input.checked);
+    });
+
+    if (getMode() === 'maximum') length.value = Math.max(24, Number(length.value));
+    lengthValue.textContent = length.value;
+    generate();
+}
+
+length.addEventListener('input', () => {
+    if (getMode() === 'maximum' && Number(length.value) < 24) length.value = 24;
+    lengthValue.textContent = length.value;
+    generate();
 });
+
+[uppercase, lowercase, numbers, symbols].forEach(el => el.addEventListener('change', generate));
+[reference, referenceExtra].forEach(el => el.addEventListener('input', generate));
+document.querySelectorAll('input[name="mode"]').forEach(el => el.addEventListener('change', updateModeUI));
+
+generateButton.addEventListener('click', generate);
+
+copyButton.addEventListener('click', async () => {
+    try {
+        if (!password.value) generate();
+        await navigator.clipboard.writeText(password.value);
+        message.textContent = 'Senha copiada para a área de transferência.';
+    } catch {
+        message.textContent = 'Não foi possível copiar automaticamente. Selecione e copie a senha manualmente.';
+    }
+});
+
 generate();
