@@ -35,7 +35,9 @@ function secureRandom(max) {
 }
 
 function cleanReference(value) {
-    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '');
+    return value.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '');
 }
 
 function shuffled(array) {
@@ -54,26 +56,32 @@ function getReferences() {
     return [cleanReference(reference.value), cleanReference(referenceExtra.value)].filter(Boolean);
 }
 
-function buildReferenceParts(refs, targetLength, mode) {
-    if (!refs.length || mode === 'random' || mode === 'maximum') return [];
-
-    const source = refs.join('');
-    const parts = [];
-    const transformed = source.split('').map((char, index) => {
+function transformReference(source) {
+    return source.split('').map((char, index) => {
         if (/[a-z]/.test(char)) return index % 2 === 0 ? char.toUpperCase() : char;
         return char;
-    });
+    }).join('');
+}
+
+function buildReferencePart(refs, targetLength, mode) {
+    if (!refs.length || mode === 'random' || mode === 'maximum') return '';
+
+    const source = transformReference(refs.join(''));
 
     if (mode === 'memorable') {
-        parts.push(...transformed.slice(0, Math.min(transformed.length, Math.max(4, Math.floor(targetLength * 0.4)))));
-    } else {
-        const amount = Math.min(transformed.length, Math.max(2, Math.floor(targetLength * 0.25)));
-        const positions = Array.from({ length: transformed.length }, (_, i) => i);
-        shuffled(positions);
-        positions.slice(0, amount).forEach(index => parts.push(transformed[index]));
+        return source.slice(0, Math.min(source.length, Math.max(5, Math.floor(targetLength * 0.45))));
     }
 
-    return parts;
+    // No modo personalizado, mantemos um pequeno trecho contínuo da referência.
+    // Isso deixa a personalização perceptível sem transformar a referência inteira em senha.
+    const maxReferenceLength = Math.min(source.length, Math.max(3, Math.floor(targetLength * 0.30)));
+    if (maxReferenceLength <= 0) return '';
+
+    const start = source.length > maxReferenceLength
+        ? secureRandom(source.length - maxReferenceLength + 1)
+        : 0;
+
+    return source.slice(start, start + maxReferenceLength);
 }
 
 function getActiveSets() {
@@ -98,27 +106,34 @@ function generate() {
     const all = active.join('');
     const chars = [];
 
+    // Garante pelo menos um caractere de cada categoria selecionada.
     active.forEach(set => chars.push(set[secureRandom(set.length)]));
 
-    const referenceParts = buildReferenceParts(refs, targetLength, mode);
-    referenceParts.forEach(char => {
-        if (chars.length < targetLength) chars.push(char);
-    });
+    const referencePart = buildReferencePart(refs, targetLength, mode);
 
-    while (chars.length < targetLength) chars.push(all[secureRandom(all.length)]);
+    // A referência fica visivelmente presente nos modos personalizados.
+    for (const char of referencePart) {
+        if (chars.length < targetLength) chars.push(char);
+    }
+
+    while (chars.length < targetLength) {
+        chars.push(all[secureRandom(all.length)]);
+    }
 
     shuffled(chars);
     password.value = chars.join('');
     message.textContent = '';
-    updateMeta(mode, refs);
+    updateMeta(mode, refs, Boolean(referencePart));
     updateStrength(active.length, mode, targetLength, Boolean(refs.length));
 }
 
-function updateMeta(mode, refs) {
+function updateMeta(mode, refs, referenceUsed) {
     lengthMeta.textContent = `${password.value.length} caracteres`;
-    referenceMeta.textContent = refs.length && mode !== 'random' && mode !== 'maximum'
-        ? 'Referência personalizada'
-        : 'Sem referência na senha';
+    referenceMeta.textContent = referenceUsed
+        ? 'Referência incorporada'
+        : refs.length && (mode === 'random' || mode === 'maximum')
+            ? 'Referência ignorada neste modo'
+            : 'Sem referência';
     randomnessMeta.textContent = mode === 'maximum' ? 'Máxima aleatoriedade' : 'Aleatoriedade criptográfica';
 }
 
