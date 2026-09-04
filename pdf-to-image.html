@@ -5,54 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF → Imagem</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/tools.css">
   <link rel="stylesheet" href="css/pdf-tools.css">
 </head>
 <body>
   <main class="container">
     <nav class="tool-nav" aria-label="Ferramentas">
       <a href="index.html" class="tool-link">📄 PDF Merger</a>
-      <a href="date-calculator.html" class="tool-link">📅 Calculadora de Datas</a>
+      <a href="date-calculator.html" class="tool-link">📅 Datas</a>
       <a href="pdf-to-image.html" class="tool-link active">🖼️ PDF → Imagem</a>
+      <a href="image-to-pdf.html" class="tool-link">📑 Imagem → PDF</a>
+      <a href="financial-calculator.html" class="tool-link">💰 Financeira</a>
+      <a href="password-generator.html" class="tool-link">🔐 Senhas</a>
     </nav>
-
-    <header>
-      <h1>Converter PDF em Imagem</h1>
-      <p>Transforme as páginas de um PDF em imagens PNG diretamente no navegador.</p>
-    </header>
-
+    <header><h1>PDF → Imagem</h1><p class="tool-description">Transforme as páginas de um PDF em imagens PNG diretamente no navegador.</p></header>
     <section class="tool-card">
-      <div class="upload-area" id="uploadArea">
-        <div class="upload-icon">+</div>
-        <h2>Adicionar PDF</h2>
-        <p>Arraste um PDF aqui<br>ou selecione no computador</p>
-        <input type="file" id="fileInput" accept=".pdf,application/pdf">
-        <label for="fileInput" class="button">Selecionar PDF</label>
-      </div>
-
+      <div class="upload-area" id="uploadArea"><div class="upload-icon">+</div><h2>Adicionar PDF</h2><p>Arraste um PDF aqui<br>ou selecione no computador</p><input type="file" id="fileInput" accept=".pdf,application/pdf"><label for="fileInput" class="button">Selecionar PDF</label></div>
       <div id="fileInfo" class="file-info hidden"></div>
-
-      <div id="options" class="options hidden">
-        <label for="scale">Qualidade da imagem</label>
-        <select id="scale">
-          <option value="1">Normal</option>
-          <option value="1.5" selected>Alta</option>
-          <option value="2">Muito alta</option>
-        </select>
-      </div>
-
+      <div id="options" class="options hidden"><label for="scale">Qualidade da imagem</label><select id="scale"><option value="1">Normal</option><option value="1.5" selected>Alta</option><option value="2">Muito alta</option></select></div>
       <button id="convertButton" class="merge-button" disabled>Converter PDF</button>
-
-      <div id="resultArea" class="result-area hidden">
-        <div class="success-icon">✓</div>
-        <h2>Conversão concluída!</h2>
-        <p id="resultInfo"></p>
-        <div id="imageResults" class="image-results"></div>
-        <button id="clearButton" class="new-merge-button">↻ Nova conversão</button>
-      </div>
+      <div id="resultArea" class="result-area hidden"><div class="success-icon">✓</div><h2>Conversão concluída!</h2><p id="resultInfo"></p><div id="imageResults" class="image-results"></div><button id="clearButton" class="new-merge-button">↻ Nova conversão</button></div>
     </section>
   </main>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
   <script src="js/pdf-to-image.js" type="module"></script>
 </body>
 </html>
